@@ -125,6 +125,9 @@
 ; form FAMISTUDIO_CFG_XXX.
 ;======================================================================================================================
 
+; Custom added here since i do not need music support here
+; FAMISTUDIO_CFG_MUSIC_SUPPORT = 1
+
 ; One of these MUST be defined (PAL or NTSC playback). Note that only NTSC support is supported when using any of the audio expansions.
 ; FAMISTUDIO_CFG_PAL_SUPPORT   = 1
 FAMISTUDIO_CFG_NTSC_SUPPORT  = 1
@@ -284,6 +287,10 @@ FAMISTUDIO_CFG_THREAD         = 1
     FAMISTUDIO_DUAL_SUPPORT = 1
 .else
     FAMISTUDIO_DUAL_SUPPORT = 0
+.endif
+
+.ifndef FAMISTUDIO_CFG_MUSIC_SUPPORT
+    FAMISTUDIO_CFG_MUSIC_SUPPORT = 0
 .endif
 
 .ifndef FAMISTUDIO_CFG_SFX_SUPPORT
@@ -909,12 +916,12 @@ famistudio_sfx_buffer = famistudio_sfx_base_addr + 4
 
 .segment .string(FAMISTUDIO_CA65_ZP_SEGMENT) : zeropage
 
-famistudio_r0      = TEMP
-famistudio_r1      = TEMP+1
-famistudio_r2      = TEMP+2
+famistudio_r0      = FS_TEMP
+famistudio_r1      = FS_TEMP+1
+famistudio_r2      = FS_TEMP+2
 
-famistudio_ptr0    = TEMP+3
-famistudio_ptr1    = TEMP+5
+famistudio_ptr0    = FS_TEMP+3
+famistudio_ptr1    = FS_TEMP+5
 
 famistudio_ptr0_lo = famistudio_ptr0+0
 famistudio_ptr0_hi = famistudio_ptr0+1
@@ -925,10 +932,12 @@ famistudio_ptr1_hi = famistudio_ptr1+1
 ; CODE
 ;======================================================================================================================
 
+.if FAMISTUDIO_CFG_MUSIC_SUPPORT
 .export famistudio_init
 .export famistudio_music_play
 .export famistudio_music_pause
 .export famistudio_music_stop
+.endif
 .export famistudio_update
 .if FAMISTUDIO_CFG_SFX_SUPPORT
 .if FAMISTUDIO_CFG_DPCM_SUPPORT
@@ -1160,6 +1169,8 @@ FAMISTUDIO_FDS_ENV_SPEED  = $408A
     FAMISTUDIO_ALIAS_NOISE_VOL  = famistudio_output_buf + 9
     FAMISTUDIO_ALIAS_NOISE_LO   = famistudio_output_buf + 10
 .endif
+
+.if FAMISTUDIO_CFG_MUSIC_SUPPORT
 
 ;======================================================================================================================
 ; FAMISTUDIO_INIT (public)
@@ -1696,6 +1707,8 @@ famistudio_music_pause:
     sta famistudio_song_speed
 
     rts
+
+.endif
 
 ;======================================================================================================================
 ; FAMISTUDIO_GET_NOTE_PITCH_MACRO (internal)
@@ -3221,6 +3234,8 @@ famistudio_update_row_with_delays:
 
 famistudio_update:
 
+.ifdef FAMISTUDIO_CFG_MUSIC_SUPPORT
+
     @pitch_env_type = famistudio_r0
     @temp_pitch     = famistudio_r1
     @tempo_env_ptr  = famistudio_ptr0
@@ -3557,6 +3572,7 @@ famistudio_update:
         bne @eq_channel_loop
 .endif
 
+
 ;----------------------------------------------------------------------------------------------------------------------
 @update_sound:
 
@@ -3661,6 +3677,7 @@ famistudio_update:
 .endif
 
 @skip_frame:
+.endif
 
 ;----------------------------------------------------------------------------------------------------------------------
 .if FAMISTUDIO_CFG_SFX_SUPPORT

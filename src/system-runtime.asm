@@ -1,5 +1,3 @@
-
-; main.asm
 ;
 ; The entrypoint to your game! 
 ; Everything you will write should go into files included in this file, 
@@ -78,6 +76,11 @@
 
 .segment "ZEROPAGE"
     TEMP: .res 8
+    FS_TEMP: .res 7
+    joypad: .res 1
+    joypadPress: .res 1
+    joypadRelease: .res 1
+    joypadOld: .res 1
     nmiFrameCount: .res 1          ; 256 byte counter, will increment every time nmi is called. Used to wait for vblank
     vblankPreviousFrame: .res 1    ; Used to track when we started waiting for vblank
 
@@ -94,7 +97,7 @@
 ;
 ; BSS variables
 ; 
-; This is the "rest" of the memory for your game. There are about 1500 bytes available in total.
+; This is the "rest" of the memory for your game. There are 1536 bytes available in total.
 
 .segment "BSS"
 ; yourvariable: .res 8
@@ -117,8 +120,6 @@
     ; can play consistently. Don't change this unless you know what you're doing!
     ; Note: It should be the first thing written to the CODE segment, so it's always the first thing the console runs!
     ;
-.segment "CODE"
-
     reset:
         sei       ; mask interrupts
         lda #0
@@ -201,6 +202,12 @@
         ; Keep track of how many frames have run (note: this loops over to 0 after 255.)
         inc nmiFrameCount
 
+        ; Update controllers
+        jsr controller_read
+
+        ; Update everything else i need
+        jsr nmi_stuff
+
 		; Update SFX
 		jsr famistudio_update
 
@@ -268,5 +275,7 @@
     ; 
     ; Game data is in this section. It's in the same code bank as above, and is only separated to make it easier to understand.
     ;
-.include "../sound/music.s"
+
+SFX_STRINGS = 0
 .include "../sound/SFX.s"
+.include "../sound/SFX_sfxlist.inc"
